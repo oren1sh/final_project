@@ -1,9 +1,11 @@
 import sys
 import os
-from AnnManager import AnnManager
-from PNPManager import PNPManager
+from AnnModel import AnnModel
+from PNPModel import PNPModel
+from GeneratorOfData import GeneratorOfData
 
-
+AnnModel = AnnModel()
+PNPModel = PNPModel()
 
 
 def clrscr():
@@ -15,54 +17,48 @@ def clrscr():
 	except:
 		os.system('clear')  # For Linux/OS X()
 options = {
-		1: "Neurons Net with train",
-		2: "Neurons Net without train (Using pre trained model)",
-		3: "Using SolvePNP"
+		1: "Ann as SolvePNP",
+		2: "Using DetectorModel and SolvePNP"
 	}
-def netOption(train=False):
-	netManager = NetManager()
+
+def AnnModelPre():
+	clrscr()
+	print("Using Ann as solvePNP")
+	AnnModel.predictByModel()#start the prediction
+
+def AnnTrain():
 	clrscr()
 	print("Using Neurons Net")
-	if(train):
-		epoch = 2000
-		batch = 20
-		#while True:
-		#	try:
-		#		batch = int(input("Enter BATCH SIZE (enter 0 for the default 32) : \n {number of samples to work through before updating the internal model parameters}"))
-		#		if batch <= 0:
-		#			batch = 32
-		#		break
-		#	except:
-		#		print("That's not a valid number!")
-		#while True:
-		#	try:
-		#		epoch = int(input("Enter EPOCHS SIZE (enter 0 for the default 5000) : \n {number times that the learning algorithm will work through the entire training dataset}"))
-		#		if epoch <= 0:
-		#			epoch = 5000
-		#		break
-		#	except:
-		#		print("That's not a valid number!")
-		netManager.train(BATCH_SIZE=batch,EPOCHS=epoch)#training the model
-	#end if train
-	#netManager.predictByModel()#start the prediction
+	epoch = 2000
+	batch = 15
+	AnnModel.train(BATCH_SIZE=batch,EPOCHS=epoch)#training the model
+
 def solvePNPOption():
-	pnpSolver = SolvePNPManager()
+
 	clrscr()
 	print("Using SOLVE PNP")
-	pnpSolver.predict()
+	PNPModel.predict()
 def main():
 
-	netOption(1)
+	
+	solvePNPOption()
+	#AnnTrain()
+
+	#AnnModel = AnnModel()
 	#global options
-	#print("Choose option from below :")
+	#print("hi and welcome to oren shalev final project in computer vision")
+	#print("please select one of these options below to see it run :" + "\n")
 	#for option in options:
 	#	print(str(option) + ". " + str(options[option]))
 	#chosedOption = int(input())
-	#print("You chose " + options[chosedOption])
-	#if chosedOption <= 2:#use the net option
-	#	netOption(train = (chosedOption == 1))#1 -> train = true
-	#if chosedOption == 3:#solve PNP chosed
+	#print("\n" + "You chose " + options[chosedOption])
+	#if chosedOption == 1:
+	#	AnnOption()
+	#elif chosedOption == 2:
 	#	solvePNPOption()
+	#else:
+	#	print("end of run....")
+	
 if __name__ == "__main__":
 	main()
 

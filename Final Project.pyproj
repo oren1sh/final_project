@@ -23,19 +23,27 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Scripts\DataGeneratorModel.py" />
+    <Compile Include="Scripts\AnnModel.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Scripts\CSVModel.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Scripts\DataGenerator.py" />
-    <Compile Include="Scripts\FacesHelper.py">
+    <Compile Include="Scripts\DetectorModel.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Scripts\GeneratorOfData.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Scripts\Main.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Scripts\NetManager.py" />
-    <Compile Include="Scripts\SolvePNPManager.py" />
+    <Compile Include="Scripts\N3DModel.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Scripts\PNPModel.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|face-pose" />
