@@ -19,12 +19,12 @@ class CSVModel:
 		"""
 		Creating and writing the CSV File 
 		"""
-		csvFileName = 'OutputsData\\Output_' + str(self.methodName) + '_' + str(str(datetime.datetime.now()).replace(":","-")) + '.csv'
+		csvFileName = 'OutputsData\\Output_' + str(self.methodName) + '_' + 'OREN_SHALEV' + '.csv'
 		try:
 			with open(csvFileName, 'w',newline='') as file:
 				writer = csv.writer(file)
 				writer.writerows(self.rows)
-			print("************** THE FILE " + csvFileName + " CREATED SUCCESSFULLY ***************")
+			print("************** THE FILE " + csvFileName + " HAS CREATED  ***************")
 			absPath = os.path.abspath(csvFileName)
 			subprocess.Popen('explorer /select,"' + absPath + '"')#open the folder in explorer and select the file
 

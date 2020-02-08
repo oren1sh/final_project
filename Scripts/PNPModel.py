@@ -5,29 +5,38 @@ import datetime
 import numpy as np
 import os
 import DetectorModel
+#from DetectorModel import DetectorModel
 import cv2 as cv2
+from CSVModel import CSVModel
+import time
+
 class PNPModel:
 	def __init__(self):	
 		self.model3D = N3DModel()
+		#self.DetectorModel = DetectorModel()
+		self.CSVModel = CSVModel("SOLVE_PNP")
+
+
 	def getImagePoints(self, marks):
-		"""
-		Returns np array with the relevant points (from 68 or 5)
-		"""
-		if len(marks) == 5: #get the 5 points
-			return np.array([marks[4],   # Nose tip
-							marks[2],     # Left eye left corner
-							marks[3],     # Left eye right corner
-							marks[0],     # Right eye left corner
-							marks[1],     # Right eye right corner
-				], dtype="double")
-		#by default, get the 68 points
-		return np.array([marks[33],    # Nose tip
-						marks[8],      # Chin
-						marks[36],     # Left eye left corner
-						marks[45],     # Right eye right corner
-						marks[48],     # Left Mouth corner
-						marks[54]      # Right mouth corner
-						], dtype="double")
+
+		image_points = np.array(
+						   [marks[36],# Right eye right corne
+							marks[39],#Right eye left corne
+							marks[42],# left eye right corne
+							marks[45],# left eye left corne
+							marks[27],# Nose top
+							marks[33],# Nose tip
+							marks[48],# Mouth right corne
+							marks[57],# Mouth botton tip
+							marks[54],# Mouth left corne
+							marks[0],# face up right corne
+							marks[8],# face botton corne
+							marks[16]],# face up left corne
+								dtype="double")
+		return image_points
+
+
+
 	def getMarks(self,image,face_locations):
 		"""
 		Returns the marks of the image
@@ -47,14 +56,15 @@ class PNPModel:
 
 	def predict(self):
 		fails = []
-		from CSVModel import CSVModel
-		CSVModel = CSVModel("SOLVE_PNP")
+		start_time = time.clock()
+		end_time = time.clock()
 		i = 0 
-		print("################### START PREDICT SOLVE PNP " + str(datetime.datetime.now()) + " #####################")
-		for dirpath, dirnames, filenames in os.walk("InputData\\"):
+		for dirpath, dirnames, filenames in os.walk("InputData\\test_set\\"):
 			for filename1 in [f for f in filenames if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")]:
 				filename = dirpath + "\\" + filename1
-				newFileName = filename.replace("InputData\\","")
+				newFileName = filename.replace("InputData\\test_set\\","")
+				start_time = time.clock()
+				print("################### START PNP ON " + newFileName +  " AT TIME " + str(datetime.datetime.now()) + " #####################" + "\n")
 				try:
 					image = DetectorModel.load_image_file(filename)
 					#get the face locations, try with 68 points, then with 5 points
@@ -76,15 +86,16 @@ class PNPModel:
 						continue
 
 					#solve with PNP:
-					imagePoints = marks[0:68]
-					#solve PNP with 68 or 5 points according to the length of the marks
+					imagePoints = np.float32(marks[0:68])
+
+					#solve PNP with 68 points according to the length of the marks
 					(success, rotation_vector, translation_vector) = cv2.solvePnP(self.model3D.model3DPoints5 if len(marks) == 5 else self.model3D.model3DPoints68, 
 						imagePoints, 
 						self.model3D.camera_matrix, 
 						self.model3D.dist_coeffs, 
 						flags=cv2.SOLVEPNP_ITERATIVE)
 					#adding the row to the csv
-					CSVModel.addRow(i,	
+					self.CSVModel.addRow(i,	
 					  newFileName, 
 					  rotation_vector[0][0], 
 					  rotation_vector[1][0],
@@ -93,16 +104,20 @@ class PNPModel:
 					  translation_vector[1][0],
 					  translation_vector[2][0])
 					i = i + 1
+					end_time = time.clock() - start_time
+					print("################### PNP SUCCESS ON " + newFileName +  " TOTAL TIME TAKE " + str(end_time) + " #####################"+"\n")
 				except Exception as ex:
+					end_time = time.clock() - start_time
 					print(filename + " - ERROR !!! \n " + str(ex))
+					print("################### PNP FAIL ON " + newFileName +  " TOTAL TIME TAKE " + str(end_time) + " #####################" +"\n")
 					fails.append(newFileName)
 					continue
-		CSVModel.writeToCSV()
+		self.CSVModel.writeToCSV()
 		print()
 		print(" SUMMARY : ")
-		print("TOTAL SUCCESS = " + str(len(CSVModel.rows) - 1))
+		print("TOTAL SUCCESS = " + str(len(self.CSVModel.rows) - 1))
 		print("TOTAL FAILS = " + str(len(fails)))
 		print()
-		print("################### END PREDICT SOLVE PNP  " + str(datetime.datetime.now()) + " #####################")
+		print("################### END PNP  " + str(datetime.datetime.now()) + " #####################")
 
 

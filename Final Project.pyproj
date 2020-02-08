@@ -54,11 +54,11 @@
     <Folder Include="Models\" />
     <Folder Include="ImageData\" />
     <Folder Include="InputData\" />
-    <Folder Include="OutputData\" />
+    <Folder Include="OutputsData\" />
     <Folder Include="Scripts\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="OutputData\NetModel300.pkl" />
+    <Content Include="OutputsData\NetModel300.pkl" />
     <Content Include="ImageData\296814969_3.jpg" />
     <Content Include="ImageData\2968560214_1.jpg" />
     <Content Include="ImageData\2968784797_1.jpg" />

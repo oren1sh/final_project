@@ -20,12 +20,13 @@ import datetime
 import os
 class AnnModel:
 	def __init__(self):	
-		data = pkl.load(open('OutputData\\NetModel300.pkl', 'rb'))
-		self.x = np.array(data[0])#each image has array of euclidean distances between all 68 points of the face
-		#self.x5 = np.array(data[1])#each image has array of euclidean distances between 5 points of the face
-		self.y = np.array(data[2])#each image has the rotation and translation vector
-		#self.y1 = np.array(data[2])#each image has the rotation and translation vector
-		#self.y1 = self.y1[[][0:3]]#each image has the rotation and translation vector
+		data = pkl.load(open('OutputsData\\NetModel300.pkl', 'rb'))
+		self.x = np.array(data[0])#each image has array distence vectors
+		self.y_r_v = np.array(data[1])#each image has the rotation vector
+		self.y_t_v = np.array(data[2])#each image has the translation vector
+
+		self.rot_model = load_model('Models\\RotTrainedNetModel.h5')
+		self.trans_model = load_model('Models\\TransTrainedNetModel.h5')
 
 	def print_shapes(self,x_train,y_train,x_val,y_val,x_test,y_test):
 		"""
@@ -95,37 +96,24 @@ class AnnModel:
 
 
 	def train(self,BATCH_SIZE=32, EPOCHS=5000):
-		"""
-		Training the net and output file with the name "TrainedNetModel.h5" into the dir "Models"
-		"""
-		print("################### START TRAINING " + str(datetime.datetime.now()) + " #####################")
-		print("Shape of the data: " + str(self.x.shape) + str(self.y.shape))
+		print("###################  TRAINING START AT ==> " + str(datetime.datetime.now()) + " #####################")
 		
-		self.y1 = []
-		self.y2 = []
-		for vec in self.y:
-			vec_r = vec[:][0:3]
-			vec_t = vec[:][3:6]
-			self.y1.append(vec_r)
-			self.y2.append(vec_t)
-		self.y1 = np.array(self.y1)
-		self.y2 = np.array(self.y2)
-
 
 
 		#divide you dataset in train, validation, and test
-		x_train, x_test, y_train, y_test = train_test_split(self.x, self.y1, test_size=0.2, random_state=42)
+		x_train, x_test, y_train, y_test = train_test_split(self.x, self.y_r_v, test_size=0.2, random_state=42)
 		x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.2, random_state=42)
 
-		self.print_shapes(x_train,y_train,x_val,y_val,x_test,y_test) # print the shapes of the sets
+		# print the shapes of the sets
+		self.print_shapes(x_train,y_train,x_val,y_val,x_test,y_test) 
 
 		self.setGlobalSTD(x_train)
 		x_val = self.std.transform(x_val)
 		x_test = self.std.transform(x_test)
 
-		#Training
+		#Training the by rotation vector
 		model = Sequential()
-		input_dim = self.x.shape[1] #train by the x dimension
+		input_dim = self.x.shape[1] 
 		model.add(Dense(units=432, activation='softsign', input_dim=input_dim))
 		model.add(Dense(units=432, activation='linear'))
 		model.add(Dense(units=60, activation='linear'))
@@ -140,7 +128,7 @@ class AnnModel:
 		model.compile(optimizer = 'adam', loss='mean_squared_error',metrics=['mae', 'acc'])
 		#training with the fit function
 		hist = model.fit(x=self.x_train, y=y_train, validation_data=(x_val, y_val), batch_size=BATCH_SIZE, epochs=EPOCHS, callbacks=callback_list,use_multiprocessing=True)
-		model.save('Models\\RotTrainedNetModel.h5')#saving the model
+		model.save('Models\\RotTrainedNetModel.h5')#saving the rotation vector model
 
 		print()
 		print('Train loss:', model.evaluate(self.x_train, y_train, verbose=0))
@@ -150,17 +138,17 @@ class AnnModel:
 		#visualize training graph:
 		loss_train, loss_val = self.showTrainingGraph(hist)
 
-		#plot the difference between expected and predictions values:
-		y_pred = model.predict(x_test)#get predict of the rotation and translation vector
+		#plot the difference between expected and predictions values for rotation vector:
+		y_pred = model.predict(x_test)#get predict of the rotation vector
 		diff = y_test - y_pred
 		diff_roll = diff[:, 0]
 		diff_pitch = diff[:, 1]
 		diff_yaw = diff[:, 2]
-		self.showRotationVectorRotGraph(diff_pitch, diff_roll, diff_yaw,loss_train,loss_val)#,diff_ty,diff_tx,diff_tr)
+		self.showRotationVectorRotGraph(diff_pitch, diff_roll, diff_yaw,loss_train,loss_val)#
 
 
-				#divide you dataset in train, validation, and test
-		x_train, x_test, y_train, y_test = train_test_split(self.x, self.y2, test_size=0.2, random_state=42)
+		#divide you dataset in train, validation, and test
+		x_train, x_test, y_train, y_test = train_test_split(self.x, self.y_t_v, test_size=0.2, random_state=42)
 		x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.2, random_state=42)
 
 		self.print_shapes(x_train,y_train,x_val,y_val,x_test,y_test) # print the shapes of the sets
@@ -188,7 +176,6 @@ class AnnModel:
 		#print status bar of the progress
 
 		callback_list = [EarlyStopping(monitor='val_loss', patience=50)]
-		#sgd = keras.optimizers.SGD(learning_rate=0.01, momentum=0.0, nesterov=False)
 		model.compile(optimizer = 'adam', loss='mean_squared_error',metrics=['mae', 'acc'])
 		#training with the fit function
 		hist = model.fit(x=self.x_train, y=y_train, validation_data=(x_val, y_val), batch_size=BATCH_SIZE, epochs=EPOCHS, callbacks=callback_list,use_multiprocessing=True)
@@ -210,7 +197,7 @@ class AnnModel:
 		diff_tr = diff[:, 2]
 		self.showRotationVectorTranGraph(diff_ty, diff_tx, diff_tr,loss_train,loss_val)#,diff_ty,diff_tx,diff_tr)
 
-		print("################### END TRAINING " + str(datetime.datetime.now()) + " #####################")
+		print("################### END OF TRAINING AT TIME ==> " + str(datetime.datetime.now()) + " #####################")
 
 	def setGlobalSTD(self, x_train):
 		"""
@@ -221,13 +208,14 @@ class AnnModel:
 		self.std.fit(x_train)
 		self.x_train = self.std.transform(self.x_train)
 
-	def predictByModel(self,modelPath="Models\\RotTrainedNetModel.h5"):
+	def predictByModel(self):
 		"""
 		predicting the output by the trained model
 		"""
-		CSVModel = CSVModel("NET")
+		CSVModel = CSVModel("ANN")
 		print("################### START PREDICT BY MODEL " + str(datetime.datetime.now()) + " #####################")
-		model = load_model(modelPath)
+		self.rot_model = load_model('Models\\RotTrainedNetModel.h5')
+		self.trans_model = load_model('Models\\TransTrainedNetModel.h5')
 		fails = []
 		i = 0
 		self.setGlobalSTD(self.x)
@@ -248,10 +236,14 @@ class AnnModel:
 					continue
 				features = DetectorModel.compute_features(face_points = face_points)#compute euclidian distances between the points
 				features = self.std.transform(features)
-				y_pred = model.predict(features,use_multiprocessing=True)#predict the values by the trained model
+
+				y_pred = model.rot_model(features,use_multiprocessing=True)#predict the values by the trained model
 				rx,ry,rz = y_pred[0]
 
-				CSVModel.addRow(i,newFileName,rx,ry,rz,"tx","ty","tz")
+				y_pred = model.trans_model(features,use_multiprocessing=True)#predict the values by the trained model
+				tx,ty,tz = y_pred[0]
+
+				CSVModel.addRow(i,newFileName,rx,ry,rz,tx,ty,tz)
 				i = i + 1
 		CSVModel.writeToCSV()
-		print("################### END PREDICT BY MODEL " + str(datetime.datetime.now()) + " #####################")
+		print("################### END PREDICT AT TIME ==>" + str(datetime.datetime.now()) + " #####################")

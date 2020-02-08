@@ -16,22 +16,19 @@ from scipy.io import loadmat
 
 class GeneratorOfData:
 
-	def __init__(self,methodName):
+
+	def __init__(self):
 		mat = loadmat('models\\model3D.mat')
 		model = mat['model3D']
-		camera_matrix = np.asmatrix(model['outA'][0, 0], dtype='float32') #3x3
-		model_TD = np.asarray(model['threedee'][0,0], dtype='float32') #68x3
-		vectors_of_features = []
-		fiveFeatures = []
-		croppedFeatures = []
-		vectors_of_features_counter = 0
-		vectors = []
-		fails = []
-		i = 0
-		notcropped = []
+		self.camera_matrix = np.asmatrix(model['outA'][0, 0], dtype='float32') #3x3
+		self.model_TD = np.asarray(model['threedee'][0,0], dtype='float32') #68x3
+		self.vectors_of_features = []
+		self.vectors = []
+		self.fails = []
+		self.i = 0
 
 
-	def compute_features_vectors(face_points,numberOfPoints=68):
+	def compute_features_vectors(self,face_points):
 
 
 		if numberOfPoints == 68:
@@ -60,45 +57,18 @@ class GeneratorOfData:
 					vectors_parts[0] = norm
 					vectors_parts[1] = distance[0] / norm
 					vectors_parts[2] = distance[1] / norm
-					#direction = [distance[0] / norm, distance[1] / norm]
-					#vectors_parts.append(direction)
-					#print( "vectors_parts ==  " + str(vectors_parts))
+
 					points_of_ancor_vectors[i][j][:] = vectors_parts
 				
-			#print( "points_of_ancor_vectors ==  " + str(points_of_ancor_vectors))
+			
 			return np.array(points_of_ancor_vectors).reshape(1, -1)
 
 
-		if numberOfPoints == 5:
-				face_points = np.array([face_points[33],   # Nose tip
-								  		face_points[36],     # Left eye left corner
-								  		face_points[39],     # Left eye right corner
-										face_points[42],     # Right eye left corner
-										face_points[45]]) #right eye right corner
-				features = []
-				for i in range(5):
-					for j in range(i + 1, 5):
-						features.append(np.linalg.norm(face_points[i] - face_points[j]))
-			
-				return np.array(features).reshape(1, -1)
-		#print("compute features " + str(datetime.datetime.now()))
-		assert (len(face_points) >= 68), "len(face_points) must be at least 68"
-	
-		face_points = np.array(face_points)
-		features = []
-		for i in range(68):
-			for j in range(i + 1, 68):
-				features.append(np.linalg.norm(face_points[i] - face_points[j]))
-			
-		return np.array(features).reshape(1, -1)
 
-
-	def solveThePNP(image,marks):
+	def solveThePNP(self,image,marks):
 
 		size = image.shape
-		############translation:
 		#2D image points.  If you change the image, you need to change vector
-		#print("solvePNP " + str(datetime.datetime.now()))
 		image_points = np.array([marks[33],     # Nose tip
 								marks[8],     # Chin
 								marks[36],     # Left eye left corner
@@ -106,32 +76,54 @@ class GeneratorOfData:
 								marks[48],     # Left Mouth corner
 								marks[54]      # Right mouth corner
 							], dtype="double")
+		image_points = np.array(
+						   [marks[36],# Right eye right corne
+							marks[39],#Right eye left corne
+							marks[42],# left eye right corne
+							marks[45],# left eye left corne
+							marks[27],# Nose top
+							marks[33],# Nose tip
+							marks[48],# Mouth right corne
+							marks[57],# Mouth botton tip
+							marks[54],# Mouth left corne
+							marks[0],# face up right corne
+							marks[8],# face botton corne
+							marks[16]],# face up left corne
+								dtype="double")
+
+
 	
 		# 3D model points.
-		model_points = np.array([model_TD[33],    # Nose tip
-								model_TD[8],      # Chin
-								model_TD[36],     # Left eye left corner
-								model_TD[45],     # Right eye right corne
-								model_TD[48],     # Left Mouth corner
-								model_TD[54]      # Right mouth corner
+		model_points = np.array([self.model_TD[33],    # Nose tip
+								self.model_TD[8],      # Chin
+								self.model_TD[36],     # Left eye left corner
+								self.model_TD[45],     # Right eye right corne
+								self.model_TD[48],     # Left Mouth corner
+								self.model_TD[54]      # Right mouth corner
 							], dtype="double")
+		model_points = np.array(
+						   [self.model_TD[36],# Right eye right corne
+							self.model_TD[39],#Right eye left corne
+							self.model_TD[42],# left eye right corne
+							self.model_TD[45],# left eye left corne
+							self.model_TD[27],# Nose top
+							self.model_TD[33],# Nose tip
+							self.model_TD[48],# Mouth right corne
+							self.model_TD[57],# Mouth botton tip
+							self.model_TD[54],# Mouth left corne
+							self.model_TD[0],# face up right corne
+							self.model_TD[8],# face botton corne
+							self.model_TD[16]],# face up left corne
+								dtype="double")
 
-		#print("\n\n\n")
-		#print("Camera Matrix :\n " + str(camera_matrix) + "\n")
 		dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
 			
-		(success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+		(success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, self.camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 		return[rotation_vector,translation_vector]
 
 
-	def getMarks(image,face_locations):
-		global vectors_of_features
-		global croppedFeatures
-		global vectors_of_features_counter
-		global vectors
-		global fails
-		global i
-		#print("get marks " + str(datetime.datetime.now()))
+	def getMarks(self,image,face_locations):
+
 		face_landmarks_list = DetectorModel.face_landmarks(image,face_locations)[0]
 		marks = []
 	
@@ -141,94 +133,67 @@ class GeneratorOfData:
 				marks.append(element)
 		return marks
 
-	def getFaceLocations(image,location):
-		global vectors_of_features
-		global croppedFeatures
-		global vectors_of_features_counter
-		global vectors
-		global fails
-		global i
+	def getFaceLocations(self,image,location):
 		print("get face locations " + str(datetime.datetime.now()))
-		face_locations = DetectorModel.face_locations(image,number_of_times_to_upsample = 0, model="hog")
+		face_locations = DetectorModel.face_locations(image,number_of_times_to_upsample = 0, model="cnn")
 		if len(face_locations) == 0 :
 			print("FAIL!")
-			fails.append(location)
+			self.fails.append(location)
 			return None
 		return face_locations
 
 
-	def run():
-		global vectors_of_features
-		global croppedFeatures
-		global vectors_of_features_counter
-		global fiveFeatures
-		global vectors
-		global fails
-		global notcropped
-		global i
-		for dirpath, dirnames, filenames in os.walk("images\\cropped\\"):
+	def run(self):
+		for dirpath, dirnames, filenames in os.walk("ImageData\\CropDataImage\\"):
 			for filename1 in [f for f in filenames if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")]:
 				location = dirpath + "\\" + filename1
 				currentTime = datetime.datetime.now()
 				try:
-
-					newFileName = location.replace("images\\","")
 					image = DetectorModel.load_image_file(location)
-					print("############################### " + str(i) + "##############################")
+					print("############################### " + str(self.i) + " ##############################")
 					print(location + " " + str(datetime.datetime.now()) + ":")
-					face_locations = getFaceLocations(image,location)
+					face_locations = self.getFaceLocations(image,location)
 					if(face_locations == None):
-						i = i + 1
+						self.i = self.i + 1
 						continue
 					#get the points
-					marks = getMarks(image,face_locations)
+					marks = self.getMarks(image,face_locations)
 
 					#compute and add the features to the array
-					#print("############################### " + "start of features finding" + "##############################")
-					vectors_of_features.append(compute_features_vectors(marks)[0])
-					#fiveFeatures.append(compute_features(marks,5)[0])
-					#print("############################### " + "end of features finding" + "##############################")
+					self.vectors_of_features.append(self.compute_features_vectors(marks)[0])
 
-					#croppedFeatures.append(compute_features(croppedMarks)[0])
-					pnpvectors = solveThePNP(image,marks)
+					pnpvectors = self.solveThePNP(image,marks)
 					rVector = pnpvectors[0]
 					tVector = pnpvectors[1]
 					#add the vectors
-					vectors.append([rVector[0][0],
+					self.vectors.append([rVector[0][0],
 									rVector[1][0],
 									rVector[2][0],
 									tVector[0][0],
 									tVector[1][0],
 									tVector[2][0]])	
 					print(" ################### SUCCESS " + str(datetime.datetime.now()) + "#######################")
-					if i % 200 == 0:
+					if self.i % 200 == 0:
 						print(str(datetime.datetime.now()))
-						print("i = " + str(i))
-						print("vectors_of_features = " + str(len(vectors_of_features) + vectors_of_features_counter))
-						print("vectors = " + str(len(vectors)))
-						print("fails = " + str(len(fails)))
-						print("not cropped = " + str(len(fails)))
-
-						outfile = open('OutputData\\NetModel300.pkl','wb')
-						pickle.dump((vectors_of_features,rVector,tVector),outfile)
+						print(" ################### Saving Point " + str(datetime.datetime.now()) + "#######################")
+						print("i = " + str(self.i))
+						outfile = open('OutputsData\\NetModeTest.pkl','wb')
+						pickle.dump((self.vectors_of_features,rVector,tVector),outfile)
 						outfile.close()
-						print("vectors_of_features = " + str(len(vectors_of_features) + vectors_of_features_counter))
-						print("fails = " + str(fails))
-						print("not cropped: " + str(notcropped))
+						print("self.vectors_of_features = " + str(len(self.vectors_of_features)))
+						print("self.fails = " + str(self.fails))
 
-					i = i + 1
-					#print(location + " = " + str(im.shape))
+					self.i = self.i + 1
 				except Exception as e:
 					print(str(e))
-					i = i + 1
-					fails.append(location)
+					self.i = self.i + 1
+					self.fails.append(location)
 	
-		outfile = open('OutputData\\NetModel300.pkl','wb')
-		pickle.dump((vectors_of_features,rVector,tVector),outfile)
-		outfile.close()
-		print("vectors_of_features = " + str(len(vectors_of_features) + vectors_of_features_counter))
-		print("fails = " + str(fails))
-		print("not cropped: " + str(notcropped))
+			outfile = open('OutputsData\\NetModeTest.pkl','wb')
+			pickle.dump((self.vectors_of_features,rVector,tVector),outfile)
+			outfile.close()
+			print("vectors_of_features = " + str(len(self.vectors_of_features)))
+			print("fails = " + str(self.fails))
 
 
 

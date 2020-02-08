@@ -2,7 +2,7 @@ import sys
 import os
 from AnnModel import AnnModel
 from PNPModel import PNPModel
-from GeneratorOfData import GeneratorOfData
+
 
 AnnModel = AnnModel()
 PNPModel = PNPModel()
@@ -33,15 +33,16 @@ def AnnTrain():
 	batch = 15
 	AnnModel.train(BATCH_SIZE=batch,EPOCHS=epoch)#training the model
 
-def solvePNPOption():
+def PNPModelSelect():
 
 	clrscr()
 	print("Using SOLVE PNP")
 	PNPModel.predict()
 def main():
-
-	
-	solvePNPOption()
+	#from GeneratorOfData import GeneratorOfData
+	#GeneratorOfData = GeneratorOfData()
+	#GeneratorOfData.run()
+	PNPModelSelect()
 	#AnnTrain()
 
 	#AnnModel = AnnModel()

@@ -3,15 +3,16 @@ import dlib
 import numpy as np
 import math
 
-class DetectorModel:
-	def __init__(self):
 
-		face_detector = dlib.get_frontal_face_detector()
 
-		pose_predictor_68_point = dlib.shape_predictor("Models\\shape_predictor_68_face_landmarks.dat")
-		pose_predictor_5_point = dlib.shape_predictor("Models\\shape_predictor_5_face_landmarks.dat")
-		cnn_face_detector = dlib.cnn_face_detection_model_v1("Models\\mmod_human_face_detector.dat")
+
+pose_predictor_68_point = dlib.shape_predictor("Models\\shape_predictor_68_face_landmarks.dat")
+pose_predictor_5_point = dlib.shape_predictor("Models\\shape_predictor_5_face_landmarks.dat")
+cnn_face_detector = dlib.cnn_face_detection_model_v1("Models\\mmod_human_face_detector.dat")
+face_detector = dlib.get_frontal_face_detector()
 	
+
+
 def _rect_to_css(rect):
 	"""
 	Convert a dlib 'rect' object to a plain tuple in (top, right, bottom, left) order
@@ -190,9 +191,6 @@ def compute_features(face_points,expectedNumberOfPoints=68):
 			vectors_parts[0] = norm
 			vectors_parts[1] = distance[0] / norm
 			vectors_parts[2] = distance[1] / norm
-			#direction = [distance[0] / norm, distance[1] / norm]
-			#vectors_parts.append(direction)
-			#print( "vectors_parts ==  " + str(vectors_parts))
 			points_of_ancor_vectors[i][j][:] = vectors_parts
 				
 	print( "Good run")
